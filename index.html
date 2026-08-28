@@ -139,7 +139,7 @@
 </div>
 
 <script>
-const LS_KEY = 'a股候选池_v1';
+const LS_KEY = 'a股候选池_v2';
 
 // ============ 默认数据（首次打开时内置，与飞书云端一致） ============
 const DEFAULT_DATA = [
@@ -158,42 +158,42 @@ const DEFAULT_DATA = [
     "备注":"8/28建仓，小盘高波动仓位轻","更新时间":"2026-08-28"
   },
   {
-    "股票名称":"中粮糖业","代码":"600737","状态":"自选",
+    "股票名称":"中粮糖业","代码":"600737","状态":"自选","优先级":1,
     "买入价":null,"现价":16.03,"止损位":14.2,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"大农业/粮食危机+业绩预增",
     "次日关注点":"8/28放量突破16.03转强不追高；回踩14.4~14.7缩量企稳可看，破14.2放弃",
     "备注":"候选池重点，观察期已到期续期","更新时间":"2026-08-28"
   },
   {
-    "股票名称":"隆平高科","代码":"000998","状态":"自选",
-    "买入价":null,"现价":9.25,"止损位":null,"止盈位1":null,"止盈位2":null,
-    "持仓量":null,"题材":"种植业龙头/转基因",
-    "次日关注点":"中报净亏2.73亿逻辑走坏风险，仅观望不优先",
-    "备注":"降低优先级","更新时间":"2026-08-28"
-  },
-  {
-    "股票名称":"京粮控股","代码":"000505","状态":"自选",
+    "股票名称":"京粮控股","代码":"000505","状态":"自选","优先级":2,
     "买入价":null,"现价":7.34,"止损位":null,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"农业/粮食",
     "次日关注点":"高位反弹，回踩6.5~6.7缩量企稳可看，不追",
     "备注":null,"更新时间":"2026-08-28"
   },
   {
-    "股票名称":"宝泰隆","代码":"601011","状态":"自选",
+    "股票名称":"宝泰隆","代码":"601011","状态":"自选","优先级":3,
     "买入价":null,"现价":null,"止损位":null,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"煤炭/煤化工",
     "次日关注点":"高位无买点，回调2.9~3.0缩量企稳可看",
     "备注":null,"更新时间":"2026-08-28"
   },
   {
-    "股票名称":"陕西黑猫","代码":"601015","状态":"自选",
+    "股票名称":"陕西黑猫","代码":"601015","状态":"自选","优先级":4,
     "买入价":null,"现价":null,"止损位":null,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"煤炭",
     "次日关注点":"高位无买点，回调3.3~3.5缩量企稳可看",
     "备注":null,"更新时间":"2026-08-28"
   },
   {
-    "股票名称":"航天电子","代码":"600879","状态":"自选",
+    "股票名称":"隆平高科","代码":"000998","状态":"自选","优先级":5,
+    "买入价":null,"现价":9.25,"止损位":null,"止盈位1":null,"止盈位2":null,
+    "持仓量":null,"题材":"种植业龙头/转基因",
+    "次日关注点":"中报净亏2.73亿逻辑走坏风险，仅观望不优先",
+    "备注":"降低优先级","更新时间":"2026-08-28"
+  },
+  {
+    "股票名称":"航天电子","代码":"600879","状态":"自选","优先级":6,
     "买入价":null,"现价":14.28,"止损位":13.8,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/火箭测控",
     "次日关注点":"中报-76.63%逻辑走坏降级；除非缩量企稳13.8~14.2否则不碰，破13.8放弃",
@@ -210,7 +210,7 @@ function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
 function render(){
   const hold = data.filter(d=>d.状态==='持仓');
-  const watch = data.filter(d=>d.状态!=='持仓');
+  const watch = data.filter(d=>d.状态!=='持仓').sort((a,b)=>(a.优先级??99)-(b.优先级??99));
   document.getElementById('stHold').textContent = hold.length;
   document.getElementById('stWatch').textContent = watch.length;
   document.getElementById('stTotal').textContent = data.length;
@@ -232,6 +232,7 @@ function renderCards(elId, list, cls){
     const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
     return `<div class="card ${cls}">
       <span class="tag">${cls==='hold'?'持仓':'自选'}</span>
+      ${cls!=='hold' && d.优先级?`<span class="pr" style="position:absolute;top:12px;left:12px;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${d.优先级}</span>`:''}
       <div class="name">${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
       <div class="topic">${esc(d.题材||'')}</div>
       <div class="grid">
