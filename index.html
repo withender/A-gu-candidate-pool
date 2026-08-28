@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股候选池 · 管理面板</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#1a1d24; --card2:#22262f; --border:#2c313a;
+    --text:#e6e8eb; --muted:#9aa3ad; --accent:#3b82f6; --accent2:#22d3ee;
+    --hold-bg:#3a1418; --hold-border:#f43f5e; --watch-bg:#12202e; --watch-border:#0ea5e9;
+    --up:#22c55e; --down:#ef4444;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; padding:16px; line-height:1.5;}
+  .wrap{max-width:980px; margin:0 auto;}
+
+  header h1{font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header h1 .badge{font-size:12px; font-weight:600; color:var(--accent2); border:1px solid var(--accent2); padding:2px 8px; border-radius:20px;}
+  .sub{color:var(--muted); font-size:13px; margin-top:4px;}
+  .updated{color:var(--muted); font-size:12px; margin-top:8px;}
+
+  .stats{display:flex; gap:12px; flex-wrap:wrap; margin:16px 0;}
+  .stat{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 18px; flex:1; min-width:120px;}
+  .stat .n{font-size:22px; font-weight:700;}
+  .stat .l{font-size:12px; color:var(--muted); margin-top:2px;}
+
+  .sec{margin:22px 0 10px; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .sec .dot{width:8px; height:8px; border-radius:50%;}
+  .sec.hold .dot{background:var(--hold-border);}
+  .sec.watch .dot{background:var(--watch-border);}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
+  .card{border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--card); position:relative;}
+  .card.hold{background:var(--hold-bg); border-color:var(--hold-border);}
+  .card.watch{background:var(--watch-bg); border-color:var(--watch-border);}
+  .tag{position:absolute; top:12px; right:12px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;}
+  .card.hold .tag{background:var(--hold-border); color:#fff;}
+  .card.watch .tag{background:var(--watch-border); color:#fff;}
+  .name{font-size:17px; font-weight:700;}
+  .code{font-size:12px; color:var(--muted); margin-left:6px;}
+  .topic{font-size:12px; color:var(--accent2); margin-top:2px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; margin-top:12px; font-size:13px;}
+  .grid .row{display:flex; justify-content:space-between;}
+  .grid .row .k{color:var(--muted);}
+  .grid .row .v{font-weight:600;}
+  .focus{margin-top:12px; background:rgba(255,255,255,0.05); border-left:3px solid var(--accent); padding:8px 10px; border-radius:6px; font-size:13px;}
+  .focus .fh{color:var(--accent2); font-weight:700; font-size:12px;}
+  .note{color:var(--muted); font-size:12px; margin-top:8px;}
+  .del{position:absolute; bottom:12px; right:12px; background:transparent; border:1px solid var(--down); color:var(--down); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;}
+  .del:hover{background:var(--down); color:#fff;}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0;}
+  .btn{background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer;}
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn.warn{background:#0e7490; border-color:#0e7490; color:#fff;}
+
+  .form{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:10px; display:none;}
+  .form.open{display:block;}
+  .form h3{font-size:15px; margin-bottom:12px;}
+  .form .frow{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;}
+  .form label{display:block; font-size:12px; color:var(--muted); margin-bottom:3px;}
+  .form input,.form select{width:100%; background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:7px 9px; font-size:13px;}
+  .form input:focus,.form select:focus{outline:none; border-color:var(--accent);}
+  .form .full{grid-column:1/-1;}
+  .form .actions{margin-top:14px; display:flex; gap:10px;}
+
+  .sync{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:16px;}
+  .sync h3{font-size:15px; margin-bottom:8px;}
+  .sync p{font-size:12px; color:var(--muted); margin-bottom:8px;}
+  .sync textarea{width:100%; height:110px; background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-size:12px; resize:vertical;}
+  .empty{color:var(--muted); font-size:14px; padding:24px; text-align:center; border:1px dashed var(--border); border-radius:12px;}
+
+  footer{color:var(--muted); font-size:11px; margin-top:24px; text-align:center;}
+  @media(max-width:640px){ header h1{font-size:19px;} .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📊 A股候选池 <span class="badge">婉儿管理</span></h1>
+    <div class="sub">持仓重点标记 · 自选观察 · 次日关注点</div>
+    <div class="updated" id="updatedText"></div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="stHold">0</div><div class="l">持仓中</div></div>
+    <div class="stat"><div class="n" id="stWatch">0</div><div class="l">自选观察</div></div>
+    <div class="stat"><div class="n" id="stTotal">0</div><div class="l">合计</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" onclick="toggleForm()">＋ 手动添加</button>
+    <button class="btn warn" onclick="exportJSON()">⬇ 导出 JSON（发婉儿）</button>
+    <button class="btn" onclick="toggleSync()">⬆ 导入 JSON（婉儿同步）</button>
+    <button class="btn" onclick="downloadBackup()">💾 下载备份</button>
+  </div>
+
+  <div class="form" id="addForm">
+    <h3>添加股票</h3>
+    <div class="frow">
+      <div><label>股票名称 *</label><input id="f_name" placeholder="如：中国卫星"></div>
+      <div><label>代码 *</label><input id="f_code" placeholder="如：600118"></div>
+      <div><label>状态 *</label><select id="f_status"><option value="自选">自选观察</option><option value="持仓">持仓</option></select></div>
+      <div><label>买入价</label><input id="f_buy" type="number" step="0.001" placeholder="持仓时填"></div>
+      <div><label>现价</label><input id="f_now" type="number" step="0.001"></div>
+      <div><label>止损位</label><input id="f_stop" type="number" step="0.001"></div>
+      <div><label>止盈位1</label><input id="f_tp1" type="number" step="0.001"></div>
+      <div><label>止盈位2</label><input id="f_tp2" type="number" step="0.001"></div>
+      <div><label>持仓量</label><input id="f_qty" placeholder="如：100股"></div>
+      <div><label>题材</label><input id="f_topic" placeholder="军工/算力/…"></div>
+      <div class="full"><label>次日关注点</label><input id="f_focus" placeholder="回踩支撑？板块持续性？"></div>
+      <div class="full"><label>备注</label><input id="f_note" placeholder="可选"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="addStock()">✓ 保存</button>
+      <button class="btn" onclick="toggleForm()">取消</button>
+    </div>
+  </div>
+
+  <div class="sync" id="syncBox" style="display:none;">
+    <h3>⬆ 导入 JSON（婉儿晚间复盘同步）</h3>
+    <p>把婉儿发你的 JSON 粘贴到下面，点「导入并替换」。会覆盖当前列表（建议先导出备份）。</p>
+    <textarea id="importText" placeholder='[{"股票名称":"中国卫星","代码":"600118",...}]'></textarea>
+    <div class="actions" style="margin-top:10px; display:flex; gap:10px;">
+      <button class="btn primary" onclick="importJSON()">导入并替换</button>
+      <button class="btn" onclick="toggleSync()">取消</button>
+    </div>
+  </div>
+
+  <div class="sec hold"><span class="dot"></span> 已持仓 <span id="holdCnt" style="color:var(--muted);font-size:13px;"></span></div>
+  <div class="cards" id="holdCards"></div>
+
+  <div class="sec watch"><span class="dot"></span> 自选观察 <span id="watchCnt" style="color:var(--muted);font-size:13px;"></span></div>
+  <div class="cards" id="watchCards"></div>
+
+  <footer>数据源：飞书多维表格（A股候选池）｜ 婉儿维护 · 晚间复盘实时更新</footer>
+</div>
+
+<script>
+const LS_KEY = 'a股候选池_v1';
+
+// ============ 默认数据（首次打开时内置，与飞书云端一致） ============
+const DEFAULT_DATA = [
+  {
+    "股票名称":"中国卫星","代码":"600118","状态":"持仓",
+    "买入价":59.999,"现价":null,"止损位":56.4,"止盈位1":66,"止盈位2":69,
+    "持仓量":"100股","题材":"商业航天/卫星互联网",
+    "次日关注点":"回踩20日线支撑确认；卫星互联网板块资金持续性",
+    "备注":"8/27建仓","更新时间":"2026-08-28"
+  },
+  {
+    "股票名称":"西测测试","代码":"301306","状态":"持仓",
+    "买入价":89.91,"现价":null,"止损位":84.51,"止盈位1":98.9,"止盈位2":103.4,
+    "持仓量":"100股","题材":"军工/大飞机/华为概念",
+    "次日关注点":"缩量回调企稳是否延续；军工板块轮动","备注":"8/28建仓","更新时间":"2026-08-28"
+  }
+];
+
+let data = [];
+function load(){
+  try{ const s = localStorage.getItem(LS_KEY); data = s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+  catch(e){ data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+function render(){
+  const hold = data.filter(d=>d.状态==='持仓');
+  const watch = data.filter(d=>d.状态!=='持仓');
+  document.getElementById('stHold').textContent = hold.length;
+  document.getElementById('stWatch').textContent = watch.length;
+  document.getElementById('stTotal').textContent = data.length;
+  document.getElementById('holdCnt').textContent = hold.length ? `（${hold.length}只）` : '';
+  document.getElementById('watchCnt').textContent = watch.length ? `（${watch.length}只）` : '';
+  renderCards('holdCards', hold, 'hold');
+  renderCards('watchCards', watch, 'watch');
+  document.getElementById('updatedText').textContent = '本地已存 ' + data.length + ' 只 · 更新：' + new Date().toLocaleString('zh-CN');
+}
+
+function renderCards(elId, list, cls){
+  const el = document.getElementById(elId);
+  if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':'自选') + '股票</div>'; return; }
+  el.innerHTML = list.map((d,i)=>{
+    const buy = d.买入价!=null ? d.买入价 : '—';
+    const now = d.现价!=null ? d.现价 : '—';
+    const stop = d.止损位!=null ? d.止损位 : '—';
+    const tp1 = d.止盈位1!=null ? d.止盈位1 : '—';
+    const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
+    return `<div class="card ${cls}">
+      <span class="tag">${cls==='hold'?'持仓':'自选'}</span>
+      <div class="name">${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
+      <div class="topic">${esc(d.题材||'')}</div>
+      <div class="grid">
+        <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
+        <div class="row"><span class="k">现价</span><span class="v">${now}</span></div>
+        <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
+        <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
+        <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
+        <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
+      </div>
+      ${d.次日关注点?`<div class="focus"><div class="fh">📌 次日关注点</div>${esc(d.次日关注点)}</div>`:''}
+      ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
+      <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
+    </div>`;
+  }).join('');
+}
+function indexOf(d){ return data.indexOf(d); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toggleForm(){ document.getElementById('addForm').classList.toggle('open'); }
+function toggleSync(){ const b=document.getElementById('syncBox'); b.style.display = b.style.display==='none'?'block':'none'; }
+
+function addStock(){
+  const name=document.getElementById('f_name').value.trim();
+  const code=document.getElementById('f_code').value.trim();
+  if(!name||!code){ alert('股票名称和代码必填'); return; }
+  const n = (id)=>{ const v=document.getElementById(id).value; return v===''?null:parseFloat(v); };
+  const s = {
+    股票名称:name, 代码:code, 状态:document.getElementById('f_status').value,
+    买入价:n('f_buy'), 现价:n('f_now'), 止损位:n('f_stop'), 止盈位1:n('f_tp1'), 止盈位2:n('f_tp2'),
+    持仓量:document.getElementById('f_qty').value.trim()||null,
+    题材:document.getElementById('f_topic').value.trim()||null,
+    次日关注点:document.getElementById('f_focus').value.trim()||null,
+    备注:document.getElementById('f_note').value.trim()||null,
+    更新时间:new Date().toISOString().slice(0,10)
+  };
+  data.push(s); save(); render();
+  toggleForm();
+  ['f_name','f_code','f_buy','f_now','f_stop','f_tp1','f_tp2','f_qty','f_topic','f_focus','f_note'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f_status').value='自选';
+  alert('已添加 ' + name);
+}
+
+function delStock(i){
+  if(!confirm('确定删除 ' + data[i].股票名称 + ' ？')) return;
+  data.splice(i,1); save(); render();
+}
+
+function exportJSON(){
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'A股候选池_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  // 同时弹出方便复制
+  prompt('已下载。也可复制以下 JSON 发给婉儿同步：', json);
+}
+
+function importJSON(){
+  const txt = document.getElementById('importText').value.trim();
+  if(!txt){ alert('请粘贴 JSON'); return; }
+  try{
+    const arr = JSON.parse(txt);
+    if(!Array.isArray(arr)) throw new Error('not array');
+    if(!confirm('将用 ' + arr.length + ' 条数据替换当前列表，确定？')) return;
+    data = arr; save(); render();
+    document.getElementById('importText').value='';
+    alert('导入成功，共 ' + arr.length + ' 只');
+  }catch(e){ alert('JSON 格式错误：' + e.message); }
+}
+
+function downloadBackup(){
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'A股候选池_备份_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+load(); render();
+</script>
+</body>
+</html>
