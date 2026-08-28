@@ -232,8 +232,7 @@ function renderCards(elId, list, cls){
     const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
     return `<div class="card ${cls}">
       <span class="tag">${cls==='hold'?'持仓':'自选'}</span>
-      ${cls!=='hold' && d.优先级?`<span class="pr" style="position:absolute;top:12px;left:12px;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${d.优先级}</span>`:''}
-      <div class="name">${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
+      <div class="name">${cls!=='hold' && d.优先级?`<span class="pr" style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${d.优先级}</span>`:''}${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
       <div class="topic">${esc(d.题材||'')}</div>
       <div class="grid">
         <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
