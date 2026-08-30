@@ -109,6 +109,7 @@
       <div><label>止盈位1</label><input id="f_tp1" type="number" step="0.001"></div>
       <div><label>止盈位2</label><input id="f_tp2" type="number" step="0.001"></div>
       <div><label>持仓量</label><input id="f_qty" placeholder="如：100股"></div>
+      <div><label>入池时间 / 买入时间</label><input id="f_time" placeholder="如：2026-08-28（自选填入池，持仓填买入）"></div>
       <div><label>题材</label><input id="f_topic" placeholder="军工/算力/…"></div>
       <div class="full"><label>次日关注点</label><input id="f_focus" placeholder="回踩支撑？板块持续性？"></div>
       <div class="full"><label>备注</label><input id="f_note" placeholder="可选"></div>
@@ -147,6 +148,7 @@ const DEFAULT_DATA = [
     "股票名称":"中国卫星","代码":"600118","状态":"持仓",
     "买入价":59.999,"现价":60.23,"止损位":58,"止盈位1":66,"止盈位2":69,
     "持仓量":"100股","题材":"商业航天/卫星制造龙头",
+    "入池时间":"2026-08-24","买入时间":"2026-08-28",
     "次日关注点":"回调60~58支撑区缩量未破58；破58离场，企稳60+止跌K线可持",
     "备注":"8/28建仓，中报扭亏转好","更新时间":"2026-08-28"
   },
@@ -154,6 +156,7 @@ const DEFAULT_DATA = [
     "股票名称":"西测测试","代码":"301306","状态":"持仓",
     "买入价":89.91,"现价":89.27,"止损位":84,"止盈位1":98.9,"止盈位2":103.4,
     "持仓量":"100股","题材":"军工/大飞机/华为概念·卫星检测",
+    "入池时间":"2026-08-24","买入时间":"2026-08-28",
     "次日关注点":"买点略高未止跌；放量破84无条件止损，站回92转强",
     "备注":"8/28建仓，小盘高波动仓位轻","更新时间":"2026-08-28"
   },
@@ -161,6 +164,7 @@ const DEFAULT_DATA = [
     "股票名称":"中粮糖业","代码":"600737","状态":"自选","优先级":1,
     "买入价":null,"现价":16.03,"止损位":14.2,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"大农业/粮食危机+业绩预增",
+    "入池时间":"2026-08-18",
     "次日关注点":"8/28放量未有效突破前高16.4，强势待突破不追高；等放量站稳16.4上方或回调14.4~14.7缩量企稳可看，破14.2放弃",
     "备注":"强势待突破，保留观察","更新时间":"2026-08-29"
   },
@@ -168,6 +172,7 @@ const DEFAULT_DATA = [
     "股票名称":"航天电子","代码":"600879","状态":"自选","优先级":2,
     "买入价":null,"现价":14.28,"止损位":13.8,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/火箭测控",
+    "入池时间":"2026-08-24",
     "次日关注点":"中报-76.63%逻辑走坏降级；除非缩量企稳13.8~14.2否则不碰，破13.8放弃",
     "备注":"降级观望","更新时间":"2026-08-28"
   },
@@ -175,6 +180,7 @@ const DEFAULT_DATA = [
     "股票名称":"航天电器","代码":"002025","状态":"自选","优先级":3,
     "买入价":null,"现价":62.35,"止损位":58.5,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/军工连接器龙头",
+    "入池时间":"2026-08-29",
     "次日关注点":"8/28收62.35，回调-19.5%到位+缩量企稳；等缩量回踩60~62企稳可看，破58.5放弃",
     "备注":"8/29入池，回调充分企稳","更新时间":"2026-08-29"
   },
@@ -182,6 +188,7 @@ const DEFAULT_DATA = [
     "股票名称":"华力创通","代码":"300045","状态":"自选","优先级":4,
     "买入价":null,"现价":12.37,"止损位":11.6,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/卫星导航",
+    "入池时间":"2026-08-29",
     "次日关注点":"8/28收12.37，回调-15.7%+缩量企稳；等缩量回踩12~12.4企稳可看，破11.6放弃",
     "备注":"8/29入池，回调充分企稳","更新时间":"2026-08-29"
   },
@@ -189,6 +196,7 @@ const DEFAULT_DATA = [
     "股票名称":"北方稀土","代码":"600111","状态":"自选","优先级":5,
     "买入价":null,"现价":40.62,"止损位":38,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"稀土/供给整合+反制",
+    "入池时间":"2026-08-29",
     "次日关注点":"8/28收40.62，回调-5%略不足高位平台；等回调38~39缩量企稳可看，破38放弃",
     "备注":"8/29入池，公子看好，待回调到位","更新时间":"2026-08-29"
   }
@@ -233,6 +241,7 @@ function renderCards(elId, list, cls){
         <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
         <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
         <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
+        <div class="row"><span class="k">${cls==='hold'?'买入时间':'入池时间'}</span><span class="v">${esc(cls==='hold'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
         <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
       </div>
       ${d.次日关注点?`<div class="focus"><div class="fh">📌 次日关注点</div>${esc(d.次日关注点)}</div>`:''}
@@ -256,6 +265,8 @@ function addStock(){
     股票名称:name, 代码:code, 状态:document.getElementById('f_status').value,
     买入价:n('f_buy'), 现价:n('f_now'), 止损位:n('f_stop'), 止盈位1:n('f_tp1'), 止盈位2:n('f_tp2'),
     持仓量:document.getElementById('f_qty').value.trim()||null,
+    入池时间:document.getElementById('f_time').value.trim()||null,
+    买入时间:(document.getElementById('f_status').value==='持仓'&&document.getElementById('f_time').value.trim())?document.getElementById('f_time').value.trim():null,
     题材:document.getElementById('f_topic').value.trim()||null,
     次日关注点:document.getElementById('f_focus').value.trim()||null,
     备注:document.getElementById('f_note').value.trim()||null,
@@ -263,7 +274,7 @@ function addStock(){
   };
   data.push(s); save(); render();
   toggleForm();
-  ['f_name','f_code','f_buy','f_now','f_stop','f_tp1','f_tp2','f_qty','f_topic','f_focus','f_note'].forEach(i=>document.getElementById(i).value='');
+  ['f_name','f_code','f_buy','f_now','f_stop','f_tp1','f_tp2','f_qty','f_time','f_topic','f_focus','f_note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('f_status').value='自选';
   alert('已添加 ' + name);
 }
