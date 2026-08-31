@@ -135,20 +135,20 @@
     </div>
   </div>
 
-  <div class="sec hold"><span class="dot"></span> 已持仓 <span id="holdCnt" style="color:var(--muted);font-size:13px;"></span></div>
+  <div class="sec hold"><span class="dot"></span> 已持仓 <span id="holdCnt" style="color:var(--muted);font-size:13px;"></span><span id="holdTotal" style="color:var(--accent2);font-size:13px;font-weight:600;"></span></div>
   <div class="cards" id="holdCards"></div>
 
   <div class="sec watch"><span class="dot"></span> 自选观察 <span id="watchCnt" style="color:var(--muted);font-size:13px;"></span></div>
   <div class="cards" id="watchCards"></div>
 
-  <div class="sec past"><span class="dot"></span> 曾持有（已了结） <span id="pastCnt" style="color:var(--muted);font-size:13px;"></span></div>
+  <div class="sec past"><span class="dot"></span> 曾持有（已了结） <span id="pastCnt" style="color:var(--muted);font-size:13px;"></span><span id="pastTotal" style="color:var(--past-border);font-size:13px;font-weight:600;"></span></div>
   <div class="cards" id="pastCards"></div>
 
   <footer>数据源：飞书多维表格（A股候选池）｜ 婉儿维护 · 晚间复盘实时更新</footer>
 </div>
 
 <script>
-const LS_KEY = 'a股候选池_v2';
+const LS_KEY = 'a股候选池_v3';
 
 // ============ 默认数据（首次打开时内置，与飞书云端一致） ============
 const DEFAULT_DATA = [
@@ -217,6 +217,11 @@ function load(){
 }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
+// 解析持仓量字符串（如 "600股" -> 600，"100" -> 100）
+function qtyNum(v){ if(v==null) return 0; const m = String(v).match(/\d+/); return m ? parseFloat(m[0]) : 0; }
+// 金额展示
+function fmtMoney(n){ return '¥' + (n||0).toLocaleString('zh-CN', {maximumFractionDigits:2}); }
+
 function render(){
   const hold = data.filter(d=>d.状态==='持仓');
   const watch = data.filter(d=>d.状态==='自选').sort((a,b)=>(a.优先级??99)-(b.优先级??99));
@@ -225,9 +230,23 @@ function render(){
   document.getElementById('stWatch').textContent = watch.length;
   document.getElementById('stPast').textContent = past.length;
   document.getElementById('stTotal').textContent = data.length;
+
+  // 持仓总额 = Σ 买入价×持仓量
+  let holdTotal = 0;
+  hold.forEach(d=>{ if(d.买入价!=null) holdTotal += d.买入价 * qtyNum(d.持仓量); });
+  // 曾持有 买入/卖出总额
+  let pastBuy = 0, pastSell = 0;
+  past.forEach(d=>{
+    if(d.买入价!=null) pastBuy += d.买入价 * qtyNum(d.持仓量);
+    if(d.卖出价!=null) pastSell += d.卖出价 * qtyNum(d.持仓量);
+  });
+
   document.getElementById('holdCnt').textContent = hold.length ? `（${hold.length}只）` : '';
   document.getElementById('watchCnt').textContent = watch.length ? `（${watch.length}只）` : '';
   document.getElementById('pastCnt').textContent = past.length ? `（${past.length}只）` : '';
+  document.getElementById('holdTotal').textContent = hold.length ? ` · 持仓总额 ${fmtMoney(holdTotal)}` : '';
+  document.getElementById('pastTotal').textContent = past.length ? ` · 买入 ${fmtMoney(pastBuy)} / 卖出 ${fmtMoney(pastSell)}` : '';
+
   renderCards('holdCards', hold, 'hold');
   renderCards('watchCards', watch, 'watch');
   renderCards('pastCards', past, 'past');
