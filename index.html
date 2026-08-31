@@ -31,6 +31,10 @@
   .sec.hold .dot{background:var(--hold-border);}
   .sec.watch .dot{background:var(--watch-border);}
   .sec.past .dot{background:var(--past-border);}
+  .group{margin-top:14px;}
+  .group-title{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; color:var(--accent2); margin:0 2px 10px;}
+  .group-title .bar{width:4px; height:14px; border-radius:2px; background:var(--accent2);}
+  .group-title .cnt{color:var(--muted); font-size:12px; font-weight:600;}
 
   .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
   .card{border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--card); position:relative;}
@@ -148,12 +152,12 @@
 </div>
 
 <script>
-const LS_KEY = 'a股候选池_v3';
+const LS_KEY = 'a股候选池_v4';
 
 // ============ 默认数据（首次打开时内置，与飞书云端一致） ============
 const DEFAULT_DATA = [
   {
-    "股票名称":"中国卫星","代码":"600118","状态":"持仓",
+    "股票名称":"中国卫星","代码":"600118","状态":"持仓","板块":"商业航天/军工",
     "买入价":59.999,"现价":60.23,"止损位":56.4,"止盈位1":66,"止盈位2":69,
     "持仓量":"100股","题材":"商业航天/卫星制造龙头",
     "入池时间":"2026-08-24","买入时间":"2026-08-27",
@@ -161,7 +165,7 @@ const DEFAULT_DATA = [
     "备注":"8/27建仓，中报扭亏转好；8/31现仅此一只持仓，止损统一56.4","更新时间":"2026-08-31"
   },
   {
-    "股票名称":"西测测试","代码":"301306","状态":"曾持有",
+    "股票名称":"西测测试","代码":"301306","状态":"曾持有","板块":"商业航天/军工",
     "买入价":89.91,"现价":95.98,"止损位":84,"止盈位1":98.9,"止盈位2":103.4,
     "持仓量":"100股","题材":"军工/大飞机/华为概念·卫星检测",
     "入池时间":"2026-08-24","买入时间":"2026-08-28","卖出时间":"2026-08-31","卖出价":95.98,"盈亏":607,
@@ -169,7 +173,7 @@ const DEFAULT_DATA = [
     "备注":"8/31清仓@95.98，+607（+6.75%），落袋为安","更新时间":"2026-08-31"
   },
   {
-    "股票名称":"中粮糖业","代码":"600737","状态":"自选","优先级":1,
+    "股票名称":"中粮糖业","代码":"600737","状态":"自选","优先级":1,"板块":"农业/白糖",
     "买入价":null,"现价":16.03,"止损位":14.2,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"大农业/粮食危机+业绩预增",
     "入池时间":"2026-08-18",
@@ -177,7 +181,7 @@ const DEFAULT_DATA = [
     "备注":"强势待突破，保留观察","更新时间":"2026-08-29"
   },
   {
-    "股票名称":"航天电子","代码":"600879","状态":"自选","优先级":2,
+    "股票名称":"航天电子","代码":"600879","状态":"自选","优先级":2,"板块":"商业航天/军工",
     "买入价":null,"现价":14.28,"止损位":13.8,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/火箭测控",
     "入池时间":"2026-08-24",
@@ -185,7 +189,7 @@ const DEFAULT_DATA = [
     "备注":"降级观望","更新时间":"2026-08-28"
   },
   {
-    "股票名称":"航天电器","代码":"002025","状态":"自选","优先级":3,
+    "股票名称":"航天电器","代码":"002025","状态":"自选","优先级":3,"板块":"商业航天/军工",
     "买入价":null,"现价":62.35,"止损位":58.5,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"商业航天/军工连接器龙头",
     "入池时间":"2026-08-29",
@@ -193,7 +197,7 @@ const DEFAULT_DATA = [
     "备注":"8/29入池，回调充分企稳","更新时间":"2026-08-29"
   },
   {
-    "股票名称":"华力创通","代码":"300045","状态":"持仓",
+    "股票名称":"华力创通","代码":"300045","状态":"持仓","板块":"商业航天/军工",
     "买入价":12.364,"现价":12.364,"止损位":11.62,"止盈位1":13.6,"止盈位2":14.22,
     "持仓量":"600股","题材":"商业航天/卫星导航",
     "入池时间":"2026-08-29","买入时间":"2026-08-31",
@@ -201,7 +205,7 @@ const DEFAULT_DATA = [
     "备注":"8/31买入600股@12.364，缩量回调企稳","更新时间":"2026-08-31"
   },
   {
-    "股票名称":"北方稀土","代码":"600111","状态":"自选","优先级":5,
+    "股票名称":"北方稀土","代码":"600111","状态":"自选","优先级":5,"板块":"稀土/资源",
     "买入价":null,"现价":40.62,"止损位":38,"止盈位1":null,"止盈位2":null,
     "持仓量":null,"题材":"稀土/供给整合+反制",
     "入池时间":"2026-08-29",
@@ -256,42 +260,54 @@ function render(){
 function renderCards(elId, list, cls){
   const el = document.getElementById(elId);
   if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':cls==='past'?'曾持有':'自选') + '股票</div>'; return; }
-  el.innerHTML = list.map((d,i)=>{
-    const buy = d.买入价!=null ? d.买入价 : '—';
-    const now = d.现价!=null ? d.现价 : '—';
-    const stop = d.止损位!=null ? d.止损位 : '—';
-    const tp1 = d.止盈位1!=null ? d.止盈位1 : '—';
-    const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
-    const tag = cls==='hold'?'持仓':cls==='past'?'曾持有':'自选';
-    const qty = qtyNum(d.持仓量);
-    // 持仓：总额 = 现价(缺省买入价) × 量
-    const holdAmt = cls==='hold' ? ((d.现价??d.买入价)!=null ? (d.现价??d.买入价)*qty : null) : null;
-    // 曾持有：买入/卖出总额
-    const pastBuyAmt = cls==='past' && d.买入价!=null ? d.买入价*qty : null;
-    const pastSellAmt = cls==='past' && d.卖出价!=null ? d.卖出价*qty : null;
-    return `<div class="card ${cls}">
-      <span class="tag">${tag}</span>
-      <div class="name">${cls!=='hold' && cls!=='past' && d.优先级?`<span class="pr" style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${d.优先级}</span>`:''}${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
-      <div class="topic">${esc(d.题材||'')}</div>
-      <div class="grid">
-        <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
-        <div class="row"><span class="k">现价</span><span class="v">${now}</span></div>
-        <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
-        <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
-        <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
-        ${cls==='hold' && holdAmt!=null?`<div class="row"><span class="k">持仓总额</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdAmt)}</span></div>`:''}
-        ${cls==='past' && pastBuyAmt!=null?`<div class="row"><span class="k">买入总额</span><span class="v">${fmtMoney(pastBuyAmt)}</span></div>`:''}
-        ${cls==='past' && pastSellAmt!=null?`<div class="row"><span class="k">卖出总额</span><span class="v" style="color:var(--up)">${fmtMoney(pastSellAmt)}</span></div>`:''}
-        <div class="row"><span class="k">${cls==='past'?'买入时间':(cls==='hold'?'买入时间':'入池时间')}</span><span class="v">${esc(cls==='hold'||cls==='past'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
-        ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
-        <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
-        <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
-        <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
-      </div>
-      ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
-      <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
+  // 按板块分组
+  const groups = {};
+  list.forEach(d=>{ const g = d.板块 || '未分类'; (groups[g] = groups[g] || []).push(d); });
+  const keys = Object.keys(groups);
+  el.innerHTML = keys.map(g=>{
+    const items = groups[g];
+    return `<div class="group">
+      <div class="group-title"><span class="bar"></span>${esc(g)} <span class="cnt">（${items.length}只）</span></div>
+      <div class="cards">${items.map(d=>cardHTML(d,cls)).join('')}</div>
     </div>`;
   }).join('');
+}
+
+function cardHTML(d, cls){
+  const buy = d.买入价!=null ? d.买入价 : '—';
+  const now = d.现价!=null ? d.现价 : '—';
+  const stop = d.止损位!=null ? d.止损位 : '—';
+  const tp1 = d.止盈位1!=null ? d.止盈位1 : '—';
+  const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
+  const tag = cls==='hold'?'持仓':cls==='past'?'曾持有':'自选';
+  const qty = qtyNum(d.持仓量);
+  // 持仓：总额 = 现价(缺省买入价) × 量
+  const holdAmt = cls==='hold' ? ((d.现价??d.买入价)!=null ? (d.现价??d.买入价)*qty : null) : null;
+  // 曾持有：买入/卖出总额
+  const pastBuyAmt = cls==='past' && d.买入价!=null ? d.买入价*qty : null;
+  const pastSellAmt = cls==='past' && d.卖出价!=null ? d.卖出价*qty : null;
+  return `<div class="card ${cls}">
+    <span class="tag">${tag}</span>
+    <div class="name">${cls!=='hold' && cls!=='past' && d.优先级?`<span class="pr" style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${d.优先级}</span>`:''}${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
+    <div class="topic">${esc(d.题材||'')}</div>
+    <div class="grid">
+      <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
+      <div class="row"><span class="k">现价</span><span class="v">${now}</span></div>
+      <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
+      <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
+      <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
+      ${cls==='hold' && holdAmt!=null?`<div class="row"><span class="k">持仓总额</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdAmt)}</span></div>`:''}
+      ${cls==='past' && pastBuyAmt!=null?`<div class="row"><span class="k">买入总额</span><span class="v">${fmtMoney(pastBuyAmt)}</span></div>`:''}
+      ${cls==='past' && pastSellAmt!=null?`<div class="row"><span class="k">卖出总额</span><span class="v" style="color:var(--up)">${fmtMoney(pastSellAmt)}</span></div>`:''}
+      <div class="row"><span class="k">${cls==='past'?'买入时间':(cls==='hold'?'买入时间':'入池时间')}</span><span class="v">${esc(cls==='hold'||cls==='past'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
+      ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
+      <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
+      <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
+      <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
+    </div>
+    ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
+    <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
+  </div>`;
 }
 function indexOf(d){ return data.indexOf(d); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
