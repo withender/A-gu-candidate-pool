@@ -9,6 +9,7 @@
     --bg:#0f1115; --card:#1a1d24; --card2:#22262f; --border:#2c313a;
     --text:#e6e8eb; --muted:#9aa3ad; --accent:#3b82f6; --accent2:#22d3ee;
     --hold-bg:#3a1418; --hold-border:#f43f5e; --watch-bg:#12202e; --watch-border:#0ea5e9;
+    --past-bg:#1c1a12; --past-border:#a16207;
     --up:#22c55e; --down:#ef4444;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -29,14 +30,17 @@
   .sec .dot{width:8px; height:8px; border-radius:50%;}
   .sec.hold .dot{background:var(--hold-border);}
   .sec.watch .dot{background:var(--watch-border);}
+  .sec.past .dot{background:var(--past-border);}
 
   .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
   .card{border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--card); position:relative;}
   .card.hold{background:var(--hold-bg); border-color:var(--hold-border);}
   .card.watch{background:var(--watch-bg); border-color:var(--watch-border);}
+  .card.past{background:var(--past-bg); border-color:var(--past-border); opacity:.92;}
   .tag{position:absolute; top:12px; right:12px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;}
   .card.hold .tag{background:var(--hold-border); color:#fff;}
   .card.watch .tag{background:var(--watch-border); color:#fff;}
+  .card.past .tag{background:var(--past-border); color:#fff;}
   .name{font-size:17px; font-weight:700;}
   .code{font-size:12px; color:var(--muted); margin-left:6px;}
   .topic{font-size:12px; color:var(--accent2); margin-top:2px;}
@@ -87,6 +91,7 @@
   <div class="stats">
     <div class="stat"><div class="n" id="stHold">0</div><div class="l">持仓中</div></div>
     <div class="stat"><div class="n" id="stWatch">0</div><div class="l">自选观察</div></div>
+    <div class="stat"><div class="n" id="stPast">0</div><div class="l">曾持有</div></div>
     <div class="stat"><div class="n" id="stTotal">0</div><div class="l">合计</div></div>
   </div>
 
@@ -102,7 +107,7 @@
     <div class="frow">
       <div><label>股票名称 *</label><input id="f_name" placeholder="如：中国卫星"></div>
       <div><label>代码 *</label><input id="f_code" placeholder="如：600118"></div>
-      <div><label>状态 *</label><select id="f_status"><option value="自选">自选观察</option><option value="持仓">持仓</option></select></div>
+      <div><label>状态 *</label><select id="f_status"><option value="自选">自选观察</option><option value="持仓">持仓</option><option value="曾持有">曾持有（已了结）</option></select></div>
       <div><label>买入价</label><input id="f_buy" type="number" step="0.001" placeholder="持仓时填"></div>
       <div><label>现价</label><input id="f_now" type="number" step="0.001"></div>
       <div><label>止损位</label><input id="f_stop" type="number" step="0.001"></div>
@@ -136,6 +141,9 @@
   <div class="sec watch"><span class="dot"></span> 自选观察 <span id="watchCnt" style="color:var(--muted);font-size:13px;"></span></div>
   <div class="cards" id="watchCards"></div>
 
+  <div class="sec past"><span class="dot"></span> 曾持有（已了结） <span id="pastCnt" style="color:var(--muted);font-size:13px;"></span></div>
+  <div class="cards" id="pastCards"></div>
+
   <footer>数据源：飞书多维表格（A股候选池）｜ 婉儿维护 · 晚间复盘实时更新</footer>
 </div>
 
@@ -151,6 +159,14 @@ const DEFAULT_DATA = [
     "入池时间":"2026-08-24","买入时间":"2026-08-27",
     "次日关注点":"回调60~58支撑区缩量未破58；破56.4无条件止损（-6%），企稳60+止跌K线可持",
     "备注":"8/27建仓，中报扭亏转好；8/31现仅此一只持仓，止损统一56.4","更新时间":"2026-08-31"
+  },
+  {
+    "股票名称":"西测测试","代码":"301306","状态":"曾持有",
+    "买入价":89.91,"现价":95.98,"止损位":84,"止盈位1":98.9,"止盈位2":103.4,
+    "持仓量":"100股","题材":"军工/大飞机/华为概念·卫星检测",
+    "入池时间":"2026-08-24","买入时间":"2026-08-28","卖出时间":"2026-08-31","卖出价":95.98,"盈亏":607,
+    "次日关注点":"已清仓",
+    "备注":"8/31清仓@95.98，+607（+6.75%），落袋为安","更新时间":"2026-08-31"
   },
   {
     "股票名称":"中粮糖业","代码":"600737","状态":"自选","优先级":1,
@@ -203,29 +219,34 @@ function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
 function render(){
   const hold = data.filter(d=>d.状态==='持仓');
-  const watch = data.filter(d=>d.状态!=='持仓').sort((a,b)=>(a.优先级??99)-(b.优先级??99));
+  const watch = data.filter(d=>d.状态==='自选').sort((a,b)=>(a.优先级??99)-(b.优先级??99));
+  const past = data.filter(d=>d.状态==='曾持有');
   document.getElementById('stHold').textContent = hold.length;
   document.getElementById('stWatch').textContent = watch.length;
+  document.getElementById('stPast').textContent = past.length;
   document.getElementById('stTotal').textContent = data.length;
   document.getElementById('holdCnt').textContent = hold.length ? `（${hold.length}只）` : '';
   document.getElementById('watchCnt').textContent = watch.length ? `（${watch.length}只）` : '';
+  document.getElementById('pastCnt').textContent = past.length ? `（${past.length}只）` : '';
   renderCards('holdCards', hold, 'hold');
   renderCards('watchCards', watch, 'watch');
+  renderCards('pastCards', past, 'past');
   document.getElementById('updatedText').textContent = '本地已存 ' + data.length + ' 只 · 更新：' + new Date().toLocaleString('zh-CN');
 }
 
 function renderCards(elId, list, cls){
   const el = document.getElementById(elId);
-  if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':'自选') + '股票</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':cls==='past'?'曾持有':'自选') + '股票</div>'; return; }
   el.innerHTML = list.map((d,i)=>{
     const buy = d.买入价!=null ? d.买入价 : '—';
     const now = d.现价!=null ? d.现价 : '—';
     const stop = d.止损位!=null ? d.止损位 : '—';
     const tp1 = d.止盈位1!=null ? d.止盈位1 : '—';
     const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
+    const tag = cls==='hold'?'持仓':cls==='past'?'曾持有':'自选';
     return `<div class="card ${cls}">
-      <span class="tag">${cls==='hold'?'持仓':'自选'}</span>
-      <div class="name">${cls!=='hold' && d.优先级?`<span class="pr" style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${d.优先级}</span>`:''}${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
+      <span class="tag">${tag}</span>
+      <div class="name">${cls!=='hold' && cls!=='past' && d.优先级?`<span class="pr" style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${d.优先级}</span>`:''}${esc(d.股票名称)}<span class="code">${esc(d.代码)}</span></div>
       <div class="topic">${esc(d.题材||'')}</div>
       <div class="grid">
         <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
@@ -233,10 +254,12 @@ function renderCards(elId, list, cls){
         <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
         <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
         <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
-        <div class="row"><span class="k">${cls==='hold'?'买入时间':'入池时间'}</span><span class="v">${esc(cls==='hold'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
+        <div class="row"><span class="k">${cls==='past'?'买入时间':(cls==='hold'?'买入时间':'入池时间')}</span><span class="v">${esc(cls==='hold'||cls==='past'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
+        ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
+        <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
+        <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
         <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
       </div>
-      ${d.次日关注点?`<div class="focus"><div class="fh">📌 次日关注点</div>${esc(d.次日关注点)}</div>`:''}
       ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
       <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
     </div>`;
@@ -258,7 +281,7 @@ function addStock(){
     买入价:n('f_buy'), 现价:n('f_now'), 止损位:n('f_stop'), 止盈位1:n('f_tp1'), 止盈位2:n('f_tp2'),
     持仓量:document.getElementById('f_qty').value.trim()||null,
     入池时间:document.getElementById('f_time').value.trim()||null,
-    买入时间:(document.getElementById('f_status').value==='持仓'&&document.getElementById('f_time').value.trim())?document.getElementById('f_time').value.trim():null,
+    买入时间:(document.getElementById('f_status').value==='持仓'||document.getElementById('f_status').value==='曾持有')&&document.getElementById('f_time').value.trim()?document.getElementById('f_time').value.trim():null,
     题材:document.getElementById('f_topic').value.trim()||null,
     次日关注点:document.getElementById('f_focus').value.trim()||null,
     备注:document.getElementById('f_note').value.trim()||null,
