@@ -305,6 +305,7 @@ function cardHTML(d, cls){
       <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
       <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
     </div>
+    ${d.次日关注点?`<div class="focus"><div class="fh">🔍 复盘 / 次日关注</div>${esc(d.次日关注点)}</div>`:''}
     ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
     <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
   </div>`;
