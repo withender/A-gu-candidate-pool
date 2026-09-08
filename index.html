@@ -36,8 +36,8 @@
   .group-title .bar{width:4px; height:14px; border-radius:2px; background:var(--accent2);}
   .group-title .cnt{color:var(--muted); font-size:12px; font-weight:600;}
 
-  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
-  .card{border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--card); position:relative;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; align-items:stretch;}
+  .card{border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--card); position:relative; display:flex; flex-direction:column; height:100%;}
   .card.hold{background:var(--hold-bg); border-color:var(--hold-border);}
   .card.watch{background:var(--watch-bg); border-color:var(--watch-border);}
   .card.past{background:var(--past-bg); border-color:var(--past-border); opacity:.92;}
@@ -45,15 +45,16 @@
   .card.hold .tag{background:var(--hold-border); color:#fff;}
   .card.watch .tag{background:var(--watch-border); color:#fff;}
   .card.past .tag{background:var(--past-border); color:#fff;}
-  .name{font-size:17px; font-weight:700;}
+  .name{font-size:17px; font-weight:700; padding-right:64px;}
   .code{font-size:12px; color:var(--muted); margin-left:6px;}
-  .topic{font-size:12px; color:var(--accent2); margin-top:2px;}
+  .topic{font-size:12px; color:var(--accent2); margin-top:2px; padding-right:64px;}
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; margin-top:12px; font-size:13px;}
   .grid .row{display:flex; justify-content:space-between;}
   .grid .row .k{color:var(--muted);}
   .grid .row .v{font-weight:600;}
-  .focus{margin-top:12px; background:rgba(255,255,255,0.05); border-left:3px solid var(--accent); padding:8px 10px; border-radius:6px; font-size:13px;}
+  .focus{margin-top:auto; background:rgba(255,255,255,0.05); border-left:3px solid var(--accent); padding:8px 10px; border-radius:6px; font-size:13px;}
   .focus .fh{color:var(--accent2); font-weight:700; font-size:12px;}
+  .focus::before{content:""; display:block; height:12px;}
   .note{color:var(--muted); font-size:12px; margin-top:8px;}
   .del{position:absolute; bottom:12px; right:12px; background:transparent; border:1px solid var(--down); color:var(--down); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;}
   .del:hover{background:var(--down); color:#fff;}
