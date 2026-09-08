@@ -285,6 +285,11 @@ function render(){
 function renderCards(elId, list, cls){
   const el = document.getElementById(elId);
   if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':cls==='past'?'曾持有':'自选') + '股票</div>'; return; }
+  // 自选观察区：按优先级顺序平铺展示（不按板块分组，保证对齐整齐）；持仓/曾持有保留板块分组
+  if(cls==='watch'){
+    el.innerHTML = `<div class="cards">${list.map(d=>cardHTML(d,cls)).join('')}</div>`;
+    return;
+  }
   // 按板块分组
   const groups = {};
   list.forEach(d=>{ const g = d.板块 || '未分类'; (groups[g] = groups[g] || []).push(d); });
