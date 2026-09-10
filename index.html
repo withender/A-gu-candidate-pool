@@ -311,6 +311,14 @@ function cardHTML(d, cls){
   const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
   const tag = cls==='hold'?'持仓':cls==='past'?'曾持有':'自选';
   const qty = qtyNum(d.持仓量);
+  // 天数（交易日）：持仓=已持有，自选=已自选，曾持有=持有天数
+  let dayRow='';
+  {
+    const ref = d.更新时间 || null;
+    if(cls==='hold'){ const n=tradingDays(d.买入时间||d.入池时间, ref); if(n!=null){ const c=n>=10?'var(--down)':(n>=8?'#f59e0b':'var(--accent2)'); dayRow=`<div class="row"><span class="k">已持有</span><span class="v" style="color:${c}">${n} 天${n>=10?' ⚠️时间止损':''}</span></div>`; } }
+    else if(cls==='past'){ const n=tradingDays(d.买入时间, d.卖出时间); if(n!=null){ dayRow=`<div class="row"><span class="k">持有</span><span class="v">${n} 天</span></div>`; } }
+    else { const n=tradingDays(d.入池时间, ref); if(n!=null){ dayRow=`<div class="row"><span class="k">已自选</span><span class="v" style="color:var(--accent2)">${n} 天</span></div>`; } }
+  }
   // 持仓：总额 = 现价(缺省买入价) × 量
   const holdAmt = cls==='hold' ? ((d.现价??d.买入价)!=null ? (d.现价??d.买入价)*qty : null) : null;
   // 曾持有：买入/卖出总额
@@ -333,6 +341,7 @@ function cardHTML(d, cls){
       ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
       <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
       <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
+      ${dayRow}
       <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
     </div>
     ${d.次日关注点?`<div class="focus"><div class="fh">🔍 复盘 / 次日关注</div>${esc(d.次日关注点)}</div>`:''}
@@ -342,6 +351,9 @@ function cardHTML(d, cls){
 }
 function indexOf(d){ return data.indexOf(d); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// 天数计算（交易日，跳过周末）；fromStr 到 toStr（缺省=更新日/今日）
+function parseDate(s){ const m=String(s==null?'':s).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if(!m) return null; return new Date(+m[1],+m[2]-1,+m[3]); }
+function tradingDays(fromStr, toStr){ const a=parseDate(fromStr); const b=toStr?parseDate(toStr):new Date(); if(!a||!b||b<a) return null; let n=0; const d=new Date(a); while(d<=b){ const w=d.getDay(); if(w!==0&&w!==6) n++; d.setDate(d.getDate()+1);} return n; }
 
 function toggleForm(){ document.getElementById('addForm').classList.toggle('open'); }
 function toggleSync(){ const b=document.getElementById('syncBox'); b.style.display = b.style.display==='none'?'block':'none'; }
