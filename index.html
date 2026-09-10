@@ -56,8 +56,6 @@
   .focus .fh{color:var(--accent2); font-weight:700; font-size:12px;}
   .focus::before{content:""; display:block; height:12px;}
   .note{color:var(--muted); font-size:12px; margin-top:8px;}
-  .del{position:absolute; bottom:12px; right:12px; background:transparent; border:1px solid var(--down); color:var(--down); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;}
-  .del:hover{background:var(--down); color:#fff;}
 
   .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0;}
   .btn{background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer;}
@@ -346,7 +344,6 @@ function cardHTML(d, cls){
     </div>
     ${d.次日关注点?`<div class="focus"><div class="fh">🔍 复盘 / 次日关注</div>${esc(d.次日关注点)}</div>`:''}
     ${d.备注?`<div class="note">📝 ${esc(d.备注)}</div>`:''}
-    <button class="del" onclick="delStock(${indexOf(d)})">删除</button>
   </div>`;
 }
 function indexOf(d){ return data.indexOf(d); }
@@ -379,11 +376,6 @@ function addStock(){
   ['f_name','f_code','f_buy','f_now','f_stop','f_tp1','f_tp2','f_qty','f_time','f_topic','f_focus','f_note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('f_status').value='自选';
   alert('已添加 ' + name);
-}
-
-function delStock(i){
-  if(!confirm('确定删除 ' + data[i].股票名称 + ' ？')) return;
-  data.splice(i,1); save(); render();
 }
 
 function exportJSON(){
