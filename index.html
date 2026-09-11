@@ -174,7 +174,7 @@ function fmtMoney(n){ return '¥' + (n||0).toLocaleString('zh-CN', {maximumFract
 function render(){
   const hold = data.filter(d=>d.状态==='持仓');
   const watch = data.filter(d=>d.状态==='自选').sort((a,b)=>(a.优先级??99)-(b.优先级??99));
-  const past = data.filter(d=>d.状态==='曾持有');
+  const past = data.filter(d=>d.状态==='曾持有').sort((a,b)=>String(b.卖出时间||'').localeCompare(String(a.卖出时间||'')));
   document.getElementById('stHold').textContent = hold.length;
   document.getElementById('stWatch').textContent = watch.length;
   document.getElementById('stPast').textContent = past.length;
@@ -207,8 +207,8 @@ function render(){
 function renderCards(elId, list, cls){
   const el = document.getElementById(elId);
   if(!list.length){ el.innerHTML = '<div class="empty">暂无' + (cls==='hold'?'持仓':cls==='past'?'曾持有':'自选') + '股票</div>'; return; }
-  // 自选观察区：按优先级顺序平铺展示（不按板块分组，保证对齐整齐）；持仓/曾持有保留板块分组
-  if(cls==='watch'){
+  // 自选观察区 & 曾持有区：平铺展示（不按板块分组，保证对齐整齐）；持仓保留板块分组
+  if(cls==='watch' || cls==='past'){
     el.innerHTML = `<div class="cards">${list.map(d=>cardHTML(d,cls)).join('')}</div>`;
     return;
   }
