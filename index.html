@@ -11,6 +11,7 @@
     --hold-bg:#3a1418; --hold-border:#f43f5e; --watch-bg:#12202e; --watch-border:#0ea5e9;
     --past-bg:#1c1a12; --past-border:#a16207;
     --up:#22c55e; --down:#ef4444;
+    --profit:#ef4444; --loss:#22c55e;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--bg); color:var(--text); font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; padding:16px; line-height:1.5;}
@@ -78,7 +79,7 @@
     <div class="stat"><div class="n" id="stTotal">0</div><div class="l">合计</div></div>
   </div>
 
-  <div class="sec hold"><span class="dot"></span> 已持仓 <span id="holdCnt" style="color:var(--muted);font-size:13px;"></span><span id="holdTotal" style="color:var(--accent2);font-size:13px;font-weight:600;"></span></div>
+  <div class="sec hold"><span class="dot"></span> 已持仓 <span id="holdCnt" style="color:var(--muted);font-size:13px;"></span><span id="holdTotal" style="color:var(--accent2);font-size:13px;font-weight:600;"></span><span id="holdCostT" style="color:var(--muted);font-size:13px;font-weight:600;"></span><span id="holdPnlT" style="font-size:13px;font-weight:700;"></span></div>
   <div class="cards" id="holdCards"></div>
 
   <div class="sec watch"><span class="dot"></span> 自选观察 <span id="watchCnt" style="color:var(--muted);font-size:13px;"></span></div>
@@ -193,7 +194,9 @@ function save(){ /* 展示页无需保存 */ }
 // 解析持仓量字符串（如 "600股" -> 600，"100" -> 100）
 function qtyNum(v){ if(v==null) return 0; const m = String(v).match(/\d+/); return m ? parseFloat(m[0]) : 0; }
 // 金额展示
-function fmtMoney(n){ return '¥' + (n||0).toLocaleString('zh-CN', {maximumFractionDigits:2}); }
+function fmtMoney(n){ return '¥' + (n||0).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+// 带符号金额（盈亏）：+¥xxx / -¥xxx
+function fmtSigned(n){ return (n>=0?'+':'-') + '¥' + Math.abs(n||0).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
 function render(){
   const hold = data.filter(d=>d.状态==='持仓');
@@ -204,9 +207,10 @@ function render(){
   document.getElementById('stPast').textContent = past.length;
   document.getElementById('stTotal').textContent = data.length;
 
-  // 持仓总额 = Σ 现价(缺省买入价)×持仓量（与卡片一致，按市值）
-  let holdTotal = 0;
-  hold.forEach(d=>{ const p=(d.现价??d.买入价); if(p!=null) holdTotal += p * qtyNum(d.持仓量); });
+  // 持仓：市值 = Σ 现价(缺省买入价)×量；成本 = Σ 买入价×量；盈亏 = 市值 − 成本
+  let holdTotal = 0, holdCost = 0;
+  hold.forEach(d=>{ const q=qtyNum(d.持仓量); if((d.现价??d.买入价)!=null) holdTotal += (d.现价??d.买入价) * q; if(d.买入价!=null) holdCost += d.买入价 * q; });
+  const holdPnl = holdTotal - holdCost;
   // 曾持有 买入/卖出总额
   let pastBuy = 0, pastSell = 0;
   past.forEach(d=>{
@@ -217,7 +221,10 @@ function render(){
   document.getElementById('holdCnt').textContent = hold.length ? `（${hold.length}只）` : '';
   document.getElementById('watchCnt').textContent = watch.length ? `（${watch.length}只）` : '';
   document.getElementById('pastCnt').textContent = past.length ? `（${past.length}只）` : '';
-  document.getElementById('holdTotal').textContent = hold.length ? ` · 持仓总额 ${fmtMoney(holdTotal)}` : '';
+  document.getElementById('holdTotal').textContent = hold.length ? ` · 市值 ${fmtMoney(holdTotal)}` : '';
+  document.getElementById('holdCostT').textContent = hold.length ? ` · 成本 ${fmtMoney(holdCost)}` : '';
+  const pnlEl = document.getElementById('holdPnlT');
+  if(hold.length){ pnlEl.textContent = ` · 盈亏 ${fmtSigned(holdPnl)}`; pnlEl.style.color = holdPnl>=0?'var(--profit)':'var(--loss)'; } else { pnlEl.textContent=''; }
   document.getElementById('pastTotal').textContent = past.length ? ` · 买入 ${fmtMoney(pastBuy)} / 卖出 ${fmtMoney(pastSell)}` : '';
 
   renderCards('holdCards', hold, 'hold');
@@ -265,8 +272,10 @@ function cardHTML(d, cls){
     else if(cls==='past'){ const n=tradingDays(d.买入时间, d.卖出时间); if(n!=null){ dayRow=`<div class="row"><span class="k">持有</span><span class="v">${n} 天</span></div>`; } }
     else { const n=tradingDays(d.入池时间, ref); if(n!=null){ dayRow=`<div class="row"><span class="k">已自选</span><span class="v" style="color:var(--accent2)">${n} 天</span></div>`; } }
   }
-  // 持仓：总额 = 现价(缺省买入价) × 量
-  const holdAmt = cls==='hold' ? ((d.现价??d.买入价)!=null ? (d.现价??d.买入价)*qty : null) : null;
+  // 持仓：市值/成本/盈亏
+  const holdMv = cls==='hold' ? ((d.现价??d.买入价)!=null ? (d.现价??d.买入价)*qty : null) : null;
+  const holdCst = cls==='hold' && d.买入价!=null ? d.买入价*qty : null;
+  const holdPnl = (cls==='hold' && holdMv!=null && holdCst!=null) ? (holdMv - holdCst) : null;
   // 曾持有：买入/卖出总额
   const pastBuyAmt = cls==='past' && d.买入价!=null ? d.买入价*qty : null;
   const pastSellAmt = cls==='past' && d.卖出价!=null ? d.卖出价*qty : null;
@@ -280,13 +289,15 @@ function cardHTML(d, cls){
       <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
       <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
       <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
-      ${cls==='hold' && holdAmt!=null?`<div class="row"><span class="k">持仓总额</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdAmt)}</span></div>`:''}
+      ${cls==='hold' && holdMv!=null?`<div class="row"><span class="k">市值</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdMv)}</span></div>`:''}
+      ${cls==='hold' && holdCst!=null?`<div class="row"><span class="k">成本</span><span class="v" style="color:var(--muted)">${fmtMoney(holdCst)}</span></div>`:''}
+      ${cls==='hold' && holdPnl!=null?`<div class="row"><span class="k">盈亏</span><span class="v" style="color:${holdPnl>=0?'var(--profit)':'var(--loss)'}">${fmtSigned(holdPnl)}</span></div>`:''}
       ${cls==='past' && pastBuyAmt!=null?`<div class="row"><span class="k">买入总额</span><span class="v">${fmtMoney(pastBuyAmt)}</span></div>`:''}
       ${cls==='past' && pastSellAmt!=null?`<div class="row"><span class="k">卖出总额</span><span class="v" style="color:var(--up)">${fmtMoney(pastSellAmt)}</span></div>`:''}
       <div class="row"><span class="k">${cls==='past'?'买入时间':(cls==='hold'?'买入时间':'入池时间')}</span><span class="v">${esc(cls==='hold'||cls==='past'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
       ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
       <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
-      <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--up)':'var(--down)'}">${d.盈亏!=null?d.盈亏:'—'}</span></div>`:''}
+      <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--profit)':'var(--loss)'}">${d.盈亏!=null?fmtSigned(d.盈亏):'—'}</span></div>`:''}
       ${dayRow}
       <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
     </div>
