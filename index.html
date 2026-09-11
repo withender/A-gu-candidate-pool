@@ -113,7 +113,7 @@ const DEFAULT_DATA = [
     "备注":"9/8轻仓100股@38.895；9/11跳空破位按纪律市价止损清仓@37.06，价差-183.50、扣费用11.93（佣金万5双向10+印花税1.85+过户费0.08）→ 净-195.43元；教训：收盘后必挂条件单，勿靠人盯（本次多亏约85元）","更新时间":"2026-09-11"
   },
   {
-    "股票名称":"西测测试","代码":"301306","状态":"曾持有","板块":"商业航天/军工",
+    "股票名称":"西测测试","代码":"301306","状态":"曾持有","模拟盘":true,"板块":"商业航天/军工",
     "买入价":89.91,"现价":95.98,"止损位":84,"止盈位1":98.9,"止盈位2":103.4,
     "持仓量":"100股","题材":"军工/大飞机/华为概念·卫星检测",
     "入池时间":"2026-08-24","买入时间":"2026-08-28","卖出时间":"2026-08-31","卖出价":95.98,"盈亏":607,
@@ -121,7 +121,7 @@ const DEFAULT_DATA = [
     "备注":"【模拟盘】8/31盘中清仓@95.98，+607（+6.75%）落袋；尾盘冲至99.02卖早约3%，落袋为安；⚠️创业板票，公子无权限，属模拟盘记录","更新时间":"2026-09-11"
   },
   {
-    "股票名称":"华力创通","代码":"300045","状态":"曾持有","板块":"商业航天/军工",
+    "股票名称":"华力创通","代码":"300045","状态":"曾持有","模拟盘":true,"板块":"商业航天/军工",
     "买入价":12.364,"现价":12.15,"止损位":11.62,"止盈位1":13.6,"止盈位2":14.22,
     "持仓量":"600股","题材":"商业航天/卫星导航",
     "入池时间":"2026-08-29","买入时间":"2026-08-31","卖出时间":"2026-09-08","卖出价":12.16,"盈亏":-122.4,
@@ -207,10 +207,15 @@ function render(){
   document.getElementById('stPast').textContent = past.length;
   document.getElementById('stTotal').textContent = data.length;
 
-  // 持仓：市值 = Σ 现价(缺省买入价)×量；成本 = Σ 买入价×量；盈亏 = 市值 − 成本
+  // 持仓：市值 = Σ 现价(缺省买入价)×量；成本 = Σ 买入价×量；浮动盈亏 = 市值 − 成本
   let holdTotal = 0, holdCost = 0;
   hold.forEach(d=>{ const q=qtyNum(d.持仓量); if((d.现价??d.买入价)!=null) holdTotal += (d.现价??d.买入价) * q; if(d.买入价!=null) holdCost += d.买入价 * q; });
   const holdPnl = holdTotal - holdCost;
+  // 已了结盈亏（仅真实账户，排除模拟盘）
+  let realizedReal = 0;
+  past.forEach(d=>{ if(!d.模拟盘 && d.盈亏!=null) realizedReal += d.盈亏; });
+  // 累计总盈亏 = 持仓浮动盈亏 + 已了结盈亏（真实账户）
+  const totalPnl = holdPnl + realizedReal;
   // 曾持有 买入/卖出总额
   let pastBuy = 0, pastSell = 0;
   past.forEach(d=>{
@@ -224,7 +229,7 @@ function render(){
   document.getElementById('holdTotal').textContent = hold.length ? ` · 市值 ${fmtMoney(holdTotal)}` : '';
   document.getElementById('holdCostT').textContent = hold.length ? ` · 成本 ${fmtMoney(holdCost)}` : '';
   const pnlEl = document.getElementById('holdPnlT');
-  if(hold.length){ pnlEl.textContent = ` · 盈亏 ${fmtSigned(holdPnl)}`; pnlEl.style.color = holdPnl>=0?'var(--profit)':'var(--loss)'; } else { pnlEl.textContent=''; }
+  if(hold.length || realizedReal!==0){ pnlEl.textContent = ` · 总盈亏 ${fmtSigned(totalPnl)}`; pnlEl.style.color = totalPnl>=0?'var(--profit)':'var(--loss)'; } else { pnlEl.textContent=''; }
   document.getElementById('pastTotal').textContent = past.length ? ` · 买入 ${fmtMoney(pastBuy)} / 卖出 ${fmtMoney(pastSell)}` : '';
 
   renderCards('holdCards', hold, 'hold');
