@@ -204,9 +204,9 @@ function render(){
   document.getElementById('stPast').textContent = past.length;
   document.getElementById('stTotal').textContent = data.length;
 
-  // 持仓总额 = Σ 买入价×持仓量
+  // 持仓总额 = Σ 现价(缺省买入价)×持仓量（与卡片一致，按市值）
   let holdTotal = 0;
-  hold.forEach(d=>{ if(d.买入价!=null) holdTotal += d.买入价 * qtyNum(d.持仓量); });
+  hold.forEach(d=>{ const p=(d.现价??d.买入价); if(p!=null) holdTotal += p * qtyNum(d.持仓量); });
   // 曾持有 买入/卖出总额
   let pastBuy = 0, pastSell = 0;
   past.forEach(d=>{
