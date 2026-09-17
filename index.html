@@ -272,6 +272,10 @@ const DEFAULT_DATA = [
   }
 ];
 
+// ⚙️ 盈亏显示开关（2026-09-17 公子要求：公开页隐藏盈亏部分）
+// true = 显示盈亏；false = 隐藏盈亏
+const SHOW_PNL = false;
+
 let data = [];
 // 纯展示页：始终使用 DEFAULT_DATA（由婉儿推送更新），不读本地缓存
 function load(){ data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
@@ -315,7 +319,7 @@ function render(){
   document.getElementById('holdTotal').textContent = hold.length ? ` · 市值 ${fmtMoney(holdTotal)}` : '';
   document.getElementById('holdCostT').textContent = hold.length ? ` · 成本 ${fmtMoney(holdCost)}` : '';
   const pnlEl = document.getElementById('holdPnlT');
-  if(hold.length || realizedReal!==0){ pnlEl.textContent = ` · 总盈亏 ${fmtSigned(totalPnl)}`; pnlEl.style.color = totalPnl>=0?'var(--profit)':'var(--loss)'; } else { pnlEl.textContent=''; }
+  if(SHOW_PNL && (hold.length || realizedReal!==0)){ pnlEl.textContent = ` · 总盈亏 ${fmtSigned(totalPnl)}`; pnlEl.style.color = totalPnl>=0?'var(--profit)':'var(--loss)'; } else { pnlEl.textContent=''; }
   document.getElementById('pastTotal').textContent = past.length ? ` · 买入 ${fmtMoney(pastBuy)} / 卖出 ${fmtMoney(pastSell)}` : '';
 
   renderCards('holdCards', hold, 'hold');
@@ -382,13 +386,12 @@ function cardHTML(d, cls){
       <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
       ${cls==='hold' && holdMv!=null?`<div class="row"><span class="k">市值</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdMv)}</span></div>`:''}
       ${cls==='hold' && holdCst!=null?`<div class="row"><span class="k">成本</span><span class="v" style="color:var(--muted)">${fmtMoney(holdCst)}</span></div>`:''}
-      ${cls==='hold' && holdPnl!=null?`<div class="row"><span class="k">盈亏</span><span class="v" style="color:${holdPnl>=0?'var(--profit)':'var(--loss)'}">${fmtSigned(holdPnl)}</span></div>`:''}
+      ${SHOW_PNL && cls==='hold' && holdPnl!=null?`<div class="row"><span class="k">盈亏</span><span class="v" style="color:${holdPnl>=0?'var(--profit)':'var(--loss)'}">${fmtSigned(holdPnl)}</span></div>`:''}
       ${cls==='past' && pastBuyAmt!=null?`<div class="row"><span class="k">买入总额</span><span class="v">${fmtMoney(pastBuyAmt)}</span></div>`:''}
       ${cls==='past' && pastSellAmt!=null?`<div class="row"><span class="k">卖出总额</span><span class="v" style="color:var(--up)">${fmtMoney(pastSellAmt)}</span></div>`:''}
       <div class="row"><span class="k">${cls==='past'?'买入时间':(cls==='hold'?'买入时间':'入池时间')}</span><span class="v">${esc(cls==='hold'||cls==='past'?(d.买入时间||d.入池时间||'—'):(d.入池时间||'—'))}</span></div>
       ${cls==='past'?`<div class="row"><span class="k">卖出时间</span><span class="v">${esc(d.卖出时间||'—')}</span></div>
-      <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>
-      <div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--profit)':'var(--loss)'}">${d.盈亏!=null?fmtSigned(d.盈亏):'—'}</span></div>`:''}
+      <div class="row"><span class="k">卖出价</span><span class="v">${d.卖出价!=null?d.卖出价:'—'}</span></div>${SHOW_PNL?`<div class="row"><span class="k">盈亏</span><span class="v" style="color:${(d.盈亏??0)>=0?'var(--profit)':'var(--loss)'}">${d.盈亏!=null?fmtSigned(d.盈亏):'—'}</span></div>`:''}`:''}
       ${dayRow}
       <div class="row"><span class="k">更新</span><span class="v">${esc(d.更新时间||'—')}</span></div>
     </div>
