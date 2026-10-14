@@ -69,6 +69,7 @@
   <header>
     <h1>📊 A股候选池 <span class="badge">婉儿管理</span></h1>
     <div class="sub">持仓重点标记 · 自选观察 · 次日关注点</div>
+    <div class="sub" style="font-size:12px;color:var(--muted);">止损＝硬止损（-6%无条件割） ｜ 放弃线＝逻辑失效线（未破位不慌，破了主动认输 / 淘汰出池）</div>
     <div class="sub" style="color:var(--accent2);font-weight:600;margin-top:2px;">🌸 当日复盘（10/13）· 收盘 ｜ 数据截止 2026-10-13 15:00 收盘（持仓2只·自选5只）</div>
     <div class="updated" id="updatedText"></div>
   </header>
@@ -211,6 +212,7 @@ const DEFAULT_DATA = [
   "买入价": null,
   "现价": 72.30,
   "止损位": 65,
+  "放弃线": 65,
   "止盈位1": 79.8,
   "止盈位2": 85,
   "持仓量": null,
@@ -250,6 +252,7 @@ const DEFAULT_DATA = [
   "买入价": null,
   "现价": 17.33,
   "止损位": 16.61,
+  "放弃线": 16.61,
   "止盈位1": 18.29,
   "止盈位2": null,
   "持仓量": null,
@@ -268,6 +271,7 @@ const DEFAULT_DATA = [
   "买入价": null,
   "现价": 7.24,
   "止损位": 6.75,
+  "放弃线": 6.75,
   "止盈位1": 8,
   "止盈位2": 8.4,
   "持仓量": null,
@@ -285,6 +289,7 @@ const DEFAULT_DATA = [
   "买入价": 6.665,
   "现价": 6.49,
   "止损位": 6.26,
+  "放弃线": 6.30,
   "止盈位1": 7.33,
   "止盈位2": 7.67,
   "持仓量": "1000股",
@@ -303,6 +308,7 @@ const DEFAULT_DATA = [
   "买入价": 3.111,
   "现价": 3.10,
   "止损位": 2.92,
+  "放弃线": 3.00,
   "止盈位1": 3.43,
   "止盈位2": 3.58,
   "持仓量": "4200股",
@@ -322,6 +328,7 @@ const DEFAULT_DATA = [
   "买入价": null,
   "现价": 17.04,
   "止损位": 16.6,
+  "放弃线": 16.6,
   "止盈位1": 19.5,
   "止盈位2": 21.0,
   "持仓量": null,
@@ -340,6 +347,7 @@ const DEFAULT_DATA = [
   "买入价": null,
   "现价": 19.80,
   "止损位": 19.3,
+  "放弃线": 19.3,
   "止盈位1": 23.42,
   "止盈位2": 24.5,
   "持仓量": null,
@@ -434,6 +442,8 @@ function cardHTML(d, cls){
   const buy = d.买入价!=null ? d.买入价 : '—';
   const now = d.现价!=null ? d.现价 : '—';
   const stop = d.止损位!=null ? d.止损位 : '—';
+  const abandon = d.放弃线!=null ? d.放弃线 : null;
+  const showStop = (cls==='hold') || (abandon==null) || (String(abandon)!==String(d.止损位));
   const tp1 = d.止盈位1!=null ? d.止盈位1 : '—';
   const tp2 = d.止盈位2!=null ? d.止盈位2 : '—';
   const tag = cls==='hold'?'持仓':cls==='past'?'曾持有':'自选';
@@ -460,7 +470,8 @@ function cardHTML(d, cls){
     <div class="grid">
       <div class="row"><span class="k">买入价</span><span class="v">${buy}</span></div>
       <div class="row"><span class="k">现价</span><span class="v">${now}</span></div>
-      <div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>
+      ${showStop?`<div class="row"><span class="k">止损</span><span class="v" style="color:var(--down)">${stop}</span></div>`:''}
+      ${abandon!=null?`<div class="row"><span class="k">放弃线</span><span class="v" style="color:#f59e0b">${abandon}</span></div>`:''}
       <div class="row"><span class="k">止盈1/2</span><span class="v" style="color:var(--up)">${tp1} / ${tp2}</span></div>
       <div class="row"><span class="k">持仓量</span><span class="v">${esc(d.持仓量||'—')}</span></div>
       ${cls==='hold' && holdMv!=null?`<div class="row"><span class="k">市值</span><span class="v" style="color:var(--accent2)">${fmtMoney(holdMv)}</span></div>`:''}
